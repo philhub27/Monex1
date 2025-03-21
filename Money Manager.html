@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<!-- saved from url=(0032)http://127.0.0.1:5500/index.html -->
+<html lang="de"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Money Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com/">
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+  <link href="./Money Manager_files/css2" rel="stylesheet">
+  <link rel="stylesheet" href="./Money Manager_files/style.css">
+  <script type="module" src="./Money Manager_files/main.js.Herunterladen"></script>
+<style>:is([id*='google_ads_iframe'],[id*='taboola-'],.taboolaHeight,.taboola-placeholder,#top-ad,#credential_picker_container,#credentials-picker-container,#credential_picker_iframe,[id*='google-one-tap-iframe'],#google-one-tap-popup-container,.google-one-tap__module,.google-one-tap-modal-div,#amp_floatingAdDiv,#ez-content-blocker-container) {display:none!important;min-height:0!important;height:0!important;}</style></head>
+<body>
+  <nav class="nav">
+    <div class="nav-item active" data-view="overview">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"></path>
+        <path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2"></path>
+        <path d="M12 11v8"></path>
+        <path d="M8 11v8"></path>
+        <path d="M16 11v8"></path>
+      </svg>
+      <span>Übersicht</span>
+    </div>
+    <div class="nav-item" data-view="accounts">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 12c0 1.2-4 6-9 6s-9-4.8-9-6c0-1.2 4-6 9-6s9 4.8 9 6Z"></path>
+        <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"></path>
+      </svg>
+      <span>Konten</span>
+    </div>
+    <div class="nav-item" data-view="statistics">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2v20"></path>
+        <path d="M2 12h20"></path>
+        <path d="m4.93 4.93 14.14 14.14"></path>
+        <path d="m19.07 4.93-14.14 14.14"></path>
+      </svg>
+      <span>Statistiken</span>
+    </div>
+  </nav>
+
+  <main>
+    <div id="overview" class="view active">
+      <div class="quick-actions">
+        <button class="quick-action" data-category="food" data-type="expense">
+          <span class="icon">🍽️</span>
+          <span class="label">Essen</span>
+        </button>
+        <button class="quick-action" data-category="transport" data-type="expense">
+          <span class="icon">🚗</span>
+          <span class="label">Transport</span>
+        </button>
+        <button class="quick-action" data-category="tech" data-type="expense">
+          <span class="icon">💻</span>
+          <span class="label">Technik</span>
+        </button>
+        <button class="quick-action income" data-category="salary" data-type="income">
+          <span class="icon">💰</span>
+          <span class="label">Gehalt</span>
+        </button>
+      </div>
+
+      <div class="transactions">
+        <h2>Transaktionen</h2>
+        <div id="transactions-list"></div>
+      </div>
+    </div>
+
+    <div id="accounts" class="view">
+      <div class="accounts-grid">
+        <div class="account-card" data-account="main">
+          <h3>Girokonto</h3>
+          <p class="balance">€1,000.00</p>
+        </div>
+        <button class="add-account">
+          <span>+</span>
+          <span>Konto hinzufügen</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="statistics" class="view">
+      <div class="summary-cards">
+        <div class="summary-card income">
+          <h3>Einnahmen</h3>
+          <p class="amount">€0.00</p>
+        </div>
+        <div class="summary-card expense">
+          <h3>Ausgaben</h3>
+          <p class="amount">€0.00</p>
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <h3>Monatliche Übersicht</h3>
+        <canvas id="monthly-chart"></canvas>
+      </div>
+
+      <div class="chart-container">
+        <h3>Ausgaben nach Kategorien</h3>
+        <canvas id="category-chart"></canvas>
+      </div>
+    </div>
+  </main>
+
+  <button class="fab" id="add-transaction">+</button>
+
+  <div class="modal" id="transaction-modal">
+    <div class="modal-content">
+      <h2>Neue Transaktion</h2>
+      <form id="transaction-form">
+        <div class="input-group">
+          <label for="amount">Betrag</label>
+          <input type="number" id="amount" step="0.01" required="" data-ddg-inputtype="unknown">
+        </div>
+        <div class="input-group">
+          <label for="description">Beschreibung (optional)</label>
+          <input type="text" id="description" data-ddg-inputtype="unknown">
+        </div>
+        <div class="category-selector">
+          <div class="category-group">
+            <button type="button" class="category-btn" data-category="food">
+              <span>🍽️</span>
+              <span>Essen</span>
+            </button>
+            <button type="button" class="category-btn" data-category="transport">
+              <span>🚗</span>
+              <span>Transport</span>
+            </button>
+            <button type="button" class="category-btn" data-category="tech">
+              <span>💻</span>
+              <span>Technik</span>
+            </button>
+            <button type="button" class="category-btn" data-category="entertainment">
+              <span>🎮</span>
+              <span>Unterhaltung</span>
+            </button>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn secondary" id="cancel-transaction">Abbrechen</button>
+          <button type="submit" class="btn primary">Speichern</button>
+        </div>
+      </form>
+    </div>
+  </div>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
+
+</body></html>

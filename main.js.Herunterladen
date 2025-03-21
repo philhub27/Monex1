@@ -1,0 +1,300 @@
+import Chart from 'chart.js/auto';
+import { format } from 'date-fns';
+import { de } from 'date-fns/locale';
+
+// State management
+const state = {
+  transactions: [],
+  accounts: [
+    { id: 'main', name: 'Girokonto', balance: 1000, color: '#0891b2' }
+  ],
+  selectedCategory: null,
+  transactionType: 'expense'
+};
+
+const categories = [
+  { id: 'food', name: 'Essen', icon: '🍽️', color: '#ef4444' },
+  { id: 'transport', name: 'Transport', icon: '🚗', color: '#3b82f6' },
+  { id: 'tech', name: 'Technik', icon: '💻', color: '#6366f1' },
+  { id: 'entertainment', name: 'Unterhaltung', icon: '🎮', color: '#8b5cf6' },
+  { id: 'shopping', name: 'Shopping', icon: '🛍️', color: '#ec4899' },
+  { id: 'salary', name: 'Gehalt', icon: '💰', color: '#22c55e' },
+  { id: 'other', name: 'Sonstiges', icon: '📦', color: '#64748b' }
+];
+
+// DOM Elements
+const transactionsList = document.getElementById('transactions-list');
+const addTransactionBtn = document.getElementById('add-transaction');
+const transactionModal = document.getElementById('transaction-modal');
+const transactionForm = document.getElementById('transaction-form');
+const cancelTransactionBtn = document.getElementById('cancel-transaction');
+const navItems = document.querySelectorAll('.nav-item');
+const views = document.querySelectorAll('.view');
+const quickActions = document.querySelectorAll('.quick-action');
+const categoryButtons = document.querySelectorAll('.category-btn');
+
+let monthlyChart = null;
+let categoryChart = null;
+
+// Navigation
+navItems.forEach(item => {
+  item.addEventListener('click', () => {
+    const view = item.dataset.view;
+    navItems.forEach(nav => nav.classList.remove('active'));
+    views.forEach(v => v.classList.remove('active'));
+    item.classList.add('active');
+    document.getElementById(view).classList.add('active');
+    updateCharts();
+  });
+});
+
+// Quick Actions
+quickActions.forEach(button => {
+  button.addEventListener('click', () => {
+    state.selectedCategory = button.dataset.category;
+    state.transactionType = button.dataset.type;
+    openTransactionModal();
+  });
+});
+
+// Category Selection
+categoryButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    categoryButtons.forEach(btn => btn.classList.remove('active'));
+    button.classList.add('active');
+    state.selectedCategory = button.dataset.category;
+  });
+});
+
+// Modal Controls
+function openTransactionModal() {
+  transactionModal.classList.add('active');
+  document.getElementById('amount').focus();
+}
+
+function closeTransactionModal() {
+  transactionModal.classList.remove('active');
+  transactionForm.reset();
+  state.selectedCategory = null;
+  categoryButtons.forEach(btn => btn.classList.remove('active'));
+}
+
+addTransactionBtn.addEventListener('click', openTransactionModal);
+cancelTransactionBtn.addEventListener('click', closeTransactionModal);
+
+// Form Submission
+transactionForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  
+  const amount = parseFloat(document.getElementById('amount').value);
+  const description = document.getElementById('description').value;
+  const category = categories.find(c => c.id === state.selectedCategory) || categories[0];
+  
+  const transaction = {
+    id: Date.now().toString(),
+    type: state.transactionType,
+    amount,
+    description: description || (state.transactionType === 'income' ? 'Einnahme' : 'Ausgabe'),
+    category,
+    date: new Date(),
+    accountId: 'main'
+  };
+
+  // Update account balance
+  const account = state.accounts.find(a => a.id === transaction.accountId);
+  if (account) {
+    account.balance += transaction.type === 'income' ? transaction.amount : -transaction.amount;
+    updateAccounts();
+  }
+
+  state.transactions.unshift(transaction);
+  updateTransactionsList();
+  updateCharts();
+  closeTransactionModal();
+});
+
+// Render Functions
+function updateTransactionsList() {
+  transactionsList.innerHTML = state.transactions
+    .map(transaction => `
+      <div class="transaction-item">
+        <div class="transaction-info">
+          <div class="transaction-category" style="background-color: ${transaction.category.color}20">
+            ${transaction.category.icon}
+          </div>
+          <div class="transaction-details">
+            <h3>${transaction.description}</h3>
+            <p>${format(transaction.date, 'dd. MMMM yyyy', { locale: de })}</p>
+          </div>
+        </div>
+        <span class="transaction-amount ${transaction.type}">
+          ${transaction.type === 'income' ? '+' : '-'} €${transaction.amount.toFixed(2)}
+        </span>
+      </div>
+    `)
+    .join('');
+}
+
+function updateAccounts() {
+  state.accounts.forEach(account => {
+    const card = document.querySelector(`[data-account="${account.id}"] .balance`);
+    if (card) {
+      card.textContent = `€${account.balance.toFixed(2)}`;
+    }
+  });
+}
+
+function updateCharts() {
+  if (document.getElementById('statistics').classList.contains('active')) {
+    updateSummaryCards();
+    updateMonthlyChart();
+    updateCategoryChart();
+  }
+}
+
+function updateSummaryCards() {
+  const totalIncome = state.transactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalExpenses = state.transactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  document.querySelector('.summary-card.income .amount').textContent = `€${totalIncome.toFixed(2)}`;
+  document.querySelector('.summary-card.expense .amount').textContent = `€${totalExpenses.toFixed(2)}`;
+}
+
+function updateMonthlyChart() {
+  const ctx = document.getElementById('monthly-chart');
+  
+  if (monthlyChart) {
+    monthlyChart.destroy();
+  }
+
+  const monthlyData = getMonthlyData();
+
+  monthlyChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: monthlyData.labels,
+      datasets: [
+        {
+          label: 'Einnahmen',
+          data: monthlyData.datasets[0].data,
+          borderColor: '#22c55e',
+          tension: 0.4
+        },
+        {
+          label: 'Ausgaben',
+          data: monthlyData.datasets[1].data,
+          borderColor: '#ef4444',
+          tension: 0.4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+        }
+      }
+    }
+  });
+}
+
+function updateCategoryChart() {
+  const ctx = document.getElementById('category-chart');
+  
+  if (categoryChart) {
+    categoryChart.destroy();
+  }
+
+  const categoryData = getCategoryData();
+
+  categoryChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: categoryData.map(d => d.name),
+      datasets: [{
+        data: categoryData.map(d => d.value),
+        backgroundColor: categoryData.map(d => d.color)
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+        }
+      }
+    }
+  });
+}
+
+function getMonthlyData() {
+  const today = new Date();
+  const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+  
+  const monthlyIncomes = {};
+  const monthlyExpenses = {};
+  const months = [];
+
+  // Initialize the last 6 months with 0
+  for (let i = 0; i < 6; i++) {
+    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const monthKey = format(date, 'MMM', { locale: de });
+    months.unshift(monthKey);
+    monthlyIncomes[monthKey] = 0;
+    monthlyExpenses[monthKey] = 0;
+  }
+
+  // Calculate sums for each month
+  state.transactions.forEach(transaction => {
+    const transactionDate = new Date(transaction.date);
+    if (transactionDate >= sixMonthsAgo) {
+      const monthKey = format(transactionDate, 'MMM', { locale: de });
+      if (transaction.type === 'income') {
+        monthlyIncomes[monthKey] = (monthlyIncomes[monthKey] || 0) + transaction.amount;
+      } else {
+        monthlyExpenses[monthKey] = (monthlyExpenses[monthKey] || 0) + transaction.amount;
+      }
+    }
+  });
+
+  return {
+    labels: months,
+    datasets: [
+      {
+        data: months.map(month => monthlyIncomes[month] || 0)
+      },
+      {
+        data: months.map(month => monthlyExpenses[month] || 0)
+      }
+    ]
+  };
+}
+
+function getCategoryData() {
+  const categoryTotals = {};
+  
+  state.transactions
+    .filter(t => t.type === 'expense')
+    .forEach(transaction => {
+      const { name, color } = transaction.category;
+      categoryTotals[name] = categoryTotals[name] || { value: 0, color };
+      categoryTotals[name].value += transaction.amount;
+    });
+
+  return Object.entries(categoryTotals).map(([name, data]) => ({
+    name,
+    value: data.value,
+    color: data.color
+  }));
+}
+
+// Initial render
+updateTransactionsList();
+updateAccounts();
+updateCharts();
